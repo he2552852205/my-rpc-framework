@@ -24,7 +24,7 @@ public class RpcMessage {
     //压缩类型
     private byte compress;
     //请求的id
-    private byte request;
+    private int request;
     //数据
     private Object data;
 
