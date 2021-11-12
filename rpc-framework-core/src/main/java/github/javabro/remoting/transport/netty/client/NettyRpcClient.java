@@ -3,7 +3,7 @@ package github.javabro.remoting.transport.netty.client;
 import github.javabro.enums.CompressTypeEnum;
 import github.javabro.enums.SerializationEnum;
 import github.javabro.factory.SingletonFactory;
-import github.javabro.remoting.constant.RpcConstant;
+import github.javabro.remoting.constants.RpcConstant;
 import github.javabro.remoting.dto.RpcMessage;
 import github.javabro.remoting.dto.RpcRequest;
 import github.javabro.remoting.dto.RpcResponse;
@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created with IntelliJ IDEA.

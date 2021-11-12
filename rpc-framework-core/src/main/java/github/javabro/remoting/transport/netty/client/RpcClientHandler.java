@@ -1,7 +1,7 @@
 package github.javabro.remoting.transport.netty.client;
 
 import github.javabro.factory.SingletonFactory;
-import github.javabro.remoting.constant.RpcConstant;
+import github.javabro.remoting.constants.RpcConstant;
 import github.javabro.remoting.dto.RpcMessage;
 import github.javabro.remoting.dto.RpcResponse;
 import io.netty.channel.ChannelHandlerContext;
