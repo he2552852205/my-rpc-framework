@@ -2,7 +2,10 @@ package github.javabro.remoting.transport.netty.client;
 
 import github.javabro.enums.CompressTypeEnum;
 import github.javabro.enums.SerializationEnum;
+import github.javabro.extension.ExtensionLoader;
 import github.javabro.factory.SingletonFactory;
+import github.javabro.registry.ServiceDiscovery;
+import github.javabro.registry.zk.ZkServiceDiscoveryImpl;
 import github.javabro.remoting.constants.RpcConstant;
 import github.javabro.remoting.dto.RpcMessage;
 import github.javabro.remoting.dto.RpcRequest;
@@ -33,10 +36,11 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class NettyRpcClient implements RpcRequestTransport {
 
-    private  final NioEventLoopGroup worker;
-    private  final Bootstrap bootstrap;
-    private  final ChannelProvider channelProvider;
-    private  final UnprocessedFutureCache unprocessedFutureCache;
+    private final NioEventLoopGroup worker;
+    private final Bootstrap bootstrap;
+    private final ChannelProvider channelProvider;
+    private final UnprocessedFutureCache unprocessedFutureCache;
+    private final ServiceDiscovery serviceDiscovery;
     public NettyRpcClient() {
         worker = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
@@ -56,6 +60,7 @@ public class NettyRpcClient implements RpcRequestTransport {
                 });
         this.channelProvider = SingletonFactory.getSingleton(ChannelProvider.class);
         this.unprocessedFutureCache = SingletonFactory.getSingleton(UnprocessedFutureCache.class);
+        this.serviceDiscovery = ExtensionLoader.getExtensionLoader(ZkServiceDiscoveryImpl.class).getExtension("zk");
     }
 
     @SneakyThrows
@@ -78,10 +83,8 @@ public class NettyRpcClient implements RpcRequestTransport {
     public Object sendMessage(RpcRequest rpcRequest) {
         //获取发送的信息的结果
         CompletableFuture<RpcResponse<Object>> resultFuture = new CompletableFuture<>();
-        //获取服务名
-        String rpcServiceName = rpcRequest.getRpcServiceName();
-        //TODO 根据rpcServiceName获得远程调用的地址 此处先写死
-        InetSocketAddress inetSocketAddress = new InetSocketAddress("127.0.0.1", 9001);
+        //根据rpcServiceName获得远程调用的地址
+        InetSocketAddress inetSocketAddress = serviceDiscovery.lookupService(rpcRequest);
         //根据地址获得channel
         Channel channel = getChannel(inetSocketAddress);
         if (channel.isActive()) {
