@@ -10,6 +10,8 @@ import github.javabro.remoting.dto.RpcResponse;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,12 +33,14 @@ public class RpcServerHandler extends ChannelInboundHandlerAdapter {
             if (msg instanceof RpcMessage) {
                 RpcMessage rpcMessage = (RpcMessage) msg;
                 byte messageType = rpcMessage.getMessageType();
-
                 RpcMessage responseMessage = RpcMessage.builder().messageType(RpcConstant.RESPONSE_TYPE)
                         .compress(CompressTypeEnum.GZIP.getCode())
                         .codec(SerializationEnum.KRYO.getCode())
                         .request(rpcMessage.getRequest()).build();
-                if (messageType == RpcConstant.REQUEST_TYPE) {
+                if (messageType == RpcConstant.HEARTBEAT_REQUEST_TYPE) {
+                    rpcMessage.setMessageType(RpcConstant.HEARTBEAT_RESPONSE_TYPE);
+                    rpcMessage.setData(RpcConstant.PONG);
+                } else {
                     RpcRequest rpcRequest = (RpcRequest) rpcMessage.getData();
                     //TODO 调用本地服务
                     Object result = "result";
@@ -54,6 +58,27 @@ public class RpcServerHandler extends ChannelInboundHandlerAdapter {
         } finally {
             ReferenceCountUtil.release(msg);
         }
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof IdleStateEvent) {
+            IdleState state = ((IdleStateEvent) evt).state();
+            if (state == IdleState.READER_IDLE) {
+                log.info("idle check happen, so close the connection");
+                ctx.close();
+            }
+        } else {
+            super.userEventTriggered(ctx, evt);
+        }
+    }
+
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        log.error("server catch exception");
+        cause.printStackTrace();
+        ctx.close();
     }
 }
 

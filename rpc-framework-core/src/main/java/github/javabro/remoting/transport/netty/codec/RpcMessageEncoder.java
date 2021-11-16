@@ -1,5 +1,9 @@
 package github.javabro.remoting.transport.netty.codec;
 
+import github.javabro.compress.Compress;
+import github.javabro.enums.CompressTypeEnum;
+import github.javabro.enums.SerializationEnum;
+import github.javabro.extension.ExtensionLoader;
 import github.javabro.remoting.constants.RpcConstant;
 import github.javabro.remoting.dto.RpcMessage;
 import github.javabro.serialize.Serializer;
@@ -42,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
 
     private static final AtomicInteger atomicInteger = new AtomicInteger(0);
-    private static final Serializer kryoSerializer = new KryoSerializer();
 
     @Override
     protected void encode(ChannelHandlerContext ctx, RpcMessage msg, ByteBuf out) throws Exception {
@@ -55,7 +58,8 @@ public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
             //越过full length最后再设置
             out.writerIndex(out.writerIndex() + 4);
             //消息类型
-            out.writeByte(msg.getMessageType());
+            byte messageType = msg.getMessageType();
+            out.writeByte(messageType);
             //序列化类型
             out.writeByte(msg.getCodec());
             //压缩类型
@@ -65,13 +69,23 @@ public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
 
             int fullLength = RpcConstant.HEAD_LENGTH;
             //body
-            byte[] body = kryoSerializer.serialize(msg.getData());
-            fullLength += body.length;
-            //TODO: compress
-
-            if (body != null) {
-                out.writeBytes(body);
+            if (messageType != RpcConstant.HEARTBEAT_REQUEST_TYPE && messageType != RpcConstant.HEARTBEAT_RESPONSE_TYPE) {
+                //序列化
+                String serializerName = SerializationEnum.getName(msg.getCodec());
+                log.info("serializer name: [{}] ", serializerName);
+                Serializer serializer = ExtensionLoader.getExtensionLoader(Serializer.class).getExtension(serializerName);
+                byte[] body = serializer.serialize(msg.getData());
+                fullLength += body.length;
+                //压缩
+                String compressName = CompressTypeEnum.getName(msg.getCompress());
+                Compress compress = ExtensionLoader.getExtensionLoader(Compress.class).getExtension(compressName);
+                body = compress.compress(body);
+                if (body != null) {
+                    out.writeBytes(body);
+                }
             }
+
+
             //填充fullLength
             int index = out.writerIndex();
             out.writeByte(index - fullLength + RpcConstant.MAGIC_NUMBER.length + 1);

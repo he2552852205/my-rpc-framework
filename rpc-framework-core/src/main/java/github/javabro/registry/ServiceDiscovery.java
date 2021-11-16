@@ -1,5 +1,6 @@
 package github.javabro.registry;
 
+import github.javabro.extension.SPI;
 import github.javabro.remoting.dto.RpcRequest;
 
 import java.net.InetSocketAddress;
@@ -11,6 +12,7 @@ import java.net.InetSocketAddress;
  * @Date: 2021/11/15/15:08
  * @Description: 服务发现
  */
+@SPI
 public interface ServiceDiscovery {
 
 

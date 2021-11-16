@@ -1,5 +1,9 @@
 package github.javabro.remoting.transport.netty.codec;
 
+import github.javabro.compress.Compress;
+import github.javabro.enums.CompressTypeEnum;
+import github.javabro.enums.SerializationEnum;
+import github.javabro.extension.ExtensionLoader;
 import github.javabro.remoting.constants.RpcConstant;
 import github.javabro.remoting.dto.RpcMessage;
 import github.javabro.remoting.dto.RpcRequest;
@@ -43,7 +47,6 @@ import static github.javabro.remoting.transport.netty.codec.RpcMessageDecoder.ch
 @Slf4j
 public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
 
-    private static final Serializer kryoSerializer = new KryoSerializer();
 
     /**
      * 5 代表长度字段要越过5个字节开始
@@ -88,24 +91,39 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
         int fullLength = byteBuf.readInt();
         byte messageType = byteBuf.readByte();
         byte codec = byteBuf.readByte();
-        byte compress = byteBuf.readByte();
+        byte compressType = byteBuf.readByte();
         int requestId = byteBuf.readInt();
         RpcMessage rpcMessage = RpcMessage.builder()
                 .messageType(messageType).codec(codec)
-                .compress(compress).request(requestId).build();
+                .compress(compressType).request(requestId).build();
 
+        if (messageType == RpcConstant.HEARTBEAT_REQUEST_TYPE) {
+            rpcMessage.setData(RpcConstant.PING);
+            return rpcMessage;
+        }
+        if (messageType == RpcConstant.HEARTBEAT_RESPONSE_TYPE) {
+            rpcMessage.setData(RpcConstant.PONG);
+            return rpcMessage;
+        }
         int bodyLen = fullLength - byteBuf.readableBytes();
         if (bodyLen > 0) {
             byte[] body = new byte[bodyLen];
             byteBuf.readBytes(body);
-            //TODO: uncompress
-
-            //TODO: 此处序列化方法暂时使用Kryo，后期会扩展
+            //解压缩
+            String compressName = CompressTypeEnum.getName(compressType);
+            Compress compress = ExtensionLoader.getExtensionLoader(Compress.class)
+                    .getExtension(compressName);
+            body = compress.decompress(body);
+            //反序列化
+            String codecName = SerializationEnum.getName(rpcMessage.getCodec());
+            log.info("codec name: [{}] ", codecName);
+            Serializer serializer = ExtensionLoader.getExtensionLoader(Serializer.class)
+                    .getExtension(codecName);
             if (messageType == RpcConstant.REQUEST_TYPE) {
-                RpcRequest rpcRequest = kryoSerializer.deserialize(body, RpcRequest.class);
+                RpcRequest rpcRequest = serializer.deserialize(body, RpcRequest.class);
                 rpcMessage.setData(rpcRequest);
             } else {
-                RpcResponse rpcResponse = kryoSerializer.deserialize(body, RpcResponse.class);
+                RpcResponse rpcResponse = serializer.deserialize(body, RpcResponse.class);
                 rpcMessage.setData(rpcResponse);
             }
         }

@@ -1,5 +1,7 @@
 package github.javabro.serialize;
 
+import github.javabro.extension.SPI;
+
 /**
  * Created with IntelliJ IDEA.
  *
@@ -7,6 +9,7 @@ package github.javabro.serialize;
  * @Date: 2021/11/09/7:48
  * @Description: 序列化接口
  */
+@SPI
 public interface Serializer {
 
 

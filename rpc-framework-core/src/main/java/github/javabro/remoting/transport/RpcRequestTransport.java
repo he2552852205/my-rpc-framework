@@ -1,5 +1,6 @@
 package github.javabro.remoting.transport;
 
+import github.javabro.extension.SPI;
 import github.javabro.remoting.dto.RpcRequest;
 
 /**
@@ -9,6 +10,7 @@ import github.javabro.remoting.dto.RpcRequest;
  * @Date: 2021/11/09/8:16
  * @Description:
  */
+@SPI
 public interface RpcRequestTransport {
 
 

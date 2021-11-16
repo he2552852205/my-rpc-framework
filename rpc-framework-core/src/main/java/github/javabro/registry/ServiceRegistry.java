@@ -1,5 +1,7 @@
 package github.javabro.registry;
 
+import github.javabro.extension.SPI;
+
 import java.net.InetSocketAddress;
 
 /**
@@ -9,6 +11,7 @@ import java.net.InetSocketAddress;
  * @Date: 2021/11/15/15:08
  * @Description: 服务注册
  */
+@SPI
 public interface ServiceRegistry {
 
 
