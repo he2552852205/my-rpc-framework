@@ -15,7 +15,7 @@ import lombok.*;
 @Getter
 @Setter
 @ToString
-public class RpcServiceProperties {
+public class RpcServiceConfig {
 
     /**
      * service version
