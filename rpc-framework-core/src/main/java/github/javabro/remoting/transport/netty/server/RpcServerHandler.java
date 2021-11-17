@@ -3,10 +3,12 @@ package github.javabro.remoting.transport.netty.server;
 import github.javabro.enums.CompressTypeEnum;
 import github.javabro.enums.RpcResponseCodeEnum;
 import github.javabro.enums.SerializationEnum;
+import github.javabro.factory.SingletonFactory;
 import github.javabro.remoting.constants.RpcConstant;
 import github.javabro.remoting.dto.RpcMessage;
 import github.javabro.remoting.dto.RpcRequest;
 import github.javabro.remoting.dto.RpcResponse;
+import github.javabro.remoting.handler.RpcRequestHandler;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -25,6 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RpcServerHandler extends ChannelInboundHandlerAdapter {
 
+    private final RpcRequestHandler rpcRequestHandler;
+
+    public RpcServerHandler(){
+        rpcRequestHandler = SingletonFactory.getSingleton(RpcRequestHandler.class);
+    }
+
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -42,8 +50,8 @@ public class RpcServerHandler extends ChannelInboundHandlerAdapter {
                     rpcMessage.setData(RpcConstant.PONG);
                 } else {
                     RpcRequest rpcRequest = (RpcRequest) rpcMessage.getData();
-                    //TODO 调用本地服务
-                    Object result = "result";
+                    //调用本地服务
+                    Object result = rpcRequestHandler.handle(rpcRequest);
                     if (ctx.channel().isActive() && ctx.channel().isWritable()) {
                         RpcResponse<Object> rpcResponse = new RpcResponse<>();
                         responseMessage.setData(rpcResponse.success(result, rpcRequest.getRequestId()));

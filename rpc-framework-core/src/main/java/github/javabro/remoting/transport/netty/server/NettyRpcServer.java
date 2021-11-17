@@ -1,5 +1,9 @@
 package github.javabro.remoting.transport.netty.server;
 
+import github.javabro.config.RpcServiceConfig;
+import github.javabro.factory.SingletonFactory;
+import github.javabro.provider.ServiceProvider;
+import github.javabro.provider.impl.ServiceProviderImpl;
 import github.javabro.remoting.transport.netty.codec.RpcMessageDecoder;
 import github.javabro.remoting.transport.netty.codec.RpcMessageEncoder;
 import io.netty.bootstrap.ServerBootstrap;
@@ -31,7 +35,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class NettyRpcServer {
 
-    private static final int PORT = 9001;
+    public static final int PORT = 9001;
+    private final ServiceProvider serviceProvider = SingletonFactory.getSingleton(ServiceProviderImpl.class);
+
+    public void registerService (RpcServiceConfig rpcServiceConfig) {
+        serviceProvider.publishService(rpcServiceConfig);
+    }
 
 
     @SneakyThrows
